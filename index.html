@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Council Minutes Search</title>
+
+  <!-- Vue.js via CDN -->
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+
+  <!-- PDF.js (we'll wire this up later) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.5.141/pdf.min.js"></script>
+
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 2rem;
+      max-width: 800px;
+      margin: auto;
+    }
+    input[type="text"] {
+      width: 100%;
+      padding: 0.5rem;
+      margin-bottom: 1rem;
+      font-size: 1rem;
+    }
+    .result {
+      margin: 1rem 0;
+      padding: 1rem;
+      border: 1px solid #ccc;
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <h1>Search Council Documents</h1>
+    <input type="text" v-model="query" placeholder="Enter search term..." @keyup.enter="search"/>
+
+    <button @click="search">Search PDFs</button>
+
+    <div v-if="loading">Searching PDFs…</div>
+
+    <div v-if="results.length > 0">
+      <h2>Results</h2>
+      <div v-for="result in results" :key="result.file" class="result">
+        <strong>{{ result.file }}</strong><br/>
+        Match found: {{ result.match }}
+      </div>
+    </div>
+
+    <div v-else-if="!loading && searched">No matches found.</div>
+  </div>
+
+  <script>
+    const { createApp } = Vue;
+
+    createApp({
+      mounted() {
+        fetch('manifest.json')
+          .then(response => response.json())
+          .then(data => {
+            this.pdfFiles = data.Agendas.concat(data.Minutes, data.Packets);
+          }).catch(error => {
+            console.error('Error loading manifest:', error);
+          });
+      },
+      data() {
+        return {
+          query: '',
+          results: [],
+          loading: false,
+          searched: false,
+          pdfFiles: [
+            'Agendas/example1.pdf',
+            'Minutes/example2.pdf',
+            'Packets/example3.pdf'
+          ]
+        };
+      },
+      methods: {
+        async search() {
+          if (!this.query.trim()) return;
+
+          this.loading = true;
+          this.results = [];
+          this.searched = true;
+
+          for (const path of this.pdfFiles) {
+            try {
+              const pdf = await pdfjsLib.getDocument(path).promise;
+              for (let i = 1; i <= pdf.numPages; i++) {
+                const page = await pdf.getPage(i);
+                const content = await page.getTextContent();
+                const text = content.items.map(item => item.str).join(' ');
+
+                if (text.toLowerCase().includes(this.query.toLowerCase())) {
+                  this.results.push({
+                    file: path,
+                    match: text.substring(0, 200) + '...'
+                  });
+                  break; // Stop scanning this file once a match is found
+                }
+              }
+            } catch (err) {
+              console.error(`Failed to search ${path}:`, err);
+            }
+          }
+
+          this.loading = false;
+        }
+      }
+    }).mount('#app');
+  </script>
+</body>
+</html>
