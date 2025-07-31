@@ -55,6 +55,15 @@
     const { createApp } = Vue;
 
     createApp({
+      mounted() {
+        fetch('manifest.json')
+          .then(response => response.json())
+          .then(data => {
+            this.pdfFiles = data.Agendas.concat(data.Minutes, data.Packets);
+          }).catch(error => {
+            console.error('Error loading manifest:', error);
+          });
+      },
       data() {
         return {
           query: '',
