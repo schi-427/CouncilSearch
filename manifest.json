@@ -1,11 +1,14 @@
 {
   "Agendas": [
-    "Agendas/City of Conway Council Meeting Agenda 6.16.2025.pdf"
+    "Agendas/City of Conway Council Meeting Agenda 6.16.2025.pdf",
+    "Agendas/City of Conway Council Meeting Agenda 6.2.2025.pdf"
   ],
   "Minutes": [
-    "Minutes/City Council Meeting Minutes 6.16.25.pdf"
+    "Minutes/City Council Meeting Minutes 6.16.25.pdf",
+    "Minutes/City Council Meeting Minutes.6.2.25.pdf"
   ],
   "Packets": [
-    "Packets/City of Conway Council Meeting Packet 6.16.2025.pdf"
+    "Packets/City of Conway Council Meeting Packet 6.16.2025.pdf",
+    "Packets/City of Conway Council Meeting Packet 6.2.2025.pdf"
   ]
 }
