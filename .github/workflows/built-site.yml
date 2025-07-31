@@ -18,8 +18,8 @@ jobs:
         with:
           node-version: 18
 
-      - name: Install dependencies (if any)
-        run: npm install
+      # - name: Install dependencies (if any)
+      #   run: npm install
 
       - name: Generate manifest.json
         run: node generateManifest.js
