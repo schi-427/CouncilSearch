@@ -29,11 +29,101 @@
       padding: 1rem;
       border: 1px solid #ccc;
     }
+    .filters {
+      margin: 1rem 0;
+      padding: 1rem;
+      border: 1px solid #eee;
+      background-color: #f9f9f9;
+    }
+    .filter-section {
+      margin-bottom: 1rem;
+    }
+    .filter-section h3 {
+      margin: 0 0 0.5rem 0;
+      font-size: 1rem;
+      color: #333;
+    }
+    .filter-options {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+    .filter-option {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .filter-option input[type="checkbox"] {
+      margin: 0;
+    }
+    .filter-option label {
+      font-size: 0.9rem;
+      cursor: pointer;
+    }
+    button {
+      padding: 0.5rem 1rem;
+      font-size: 1rem;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-bottom: 1rem;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+    .clear-filters {
+      background-color: #6c757d;
+      margin-left: 1rem;
+    }
+    .clear-filters:hover {
+      background-color: #545b62;
+    }
   </style>
 </head>
 <body>
   <div id="app">
     <h1>Search Council Documents</h1>
+    
+    <!-- Document Type Filter -->
+    <div class="filters">
+      <div class="filter-section">
+        <h3>Document Type</h3>
+        <div class="filter-options">
+          <div class="filter-option">
+            <input type="checkbox" id="agendas" v-model="filters.documentTypes.agendas">
+            <label for="agendas">Agendas</label>
+          </div>
+          <div class="filter-option">
+            <input type="checkbox" id="minutes" v-model="filters.documentTypes.minutes">
+            <label for="minutes">Minutes</label>
+          </div>
+          <div class="filter-option">
+            <input type="checkbox" id="packets" v-model="filters.documentTypes.packets">
+            <label for="packets">Packets</label>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Commission Filter -->
+      <div class="filter-section">
+        <h3>Commission</h3>
+        <div class="filter-options">
+          <div class="filter-option">
+            <input type="checkbox" id="conway" v-model="filters.commissions.conway">
+            <label for="conway">City of Conway Council</label>
+          </div>
+          <div class="filter-option">
+            <input type="checkbox" id="cab" v-model="filters.commissions.cab">
+            <label for="cab">Community Appearance Board (CAB)</label>
+          </div>
+        </div>
+      </div>
+      
+      <button @click="clearFilters" class="clear-filters">Clear All Filters</button>
+    </div>
+
     <input type="text" v-model="query" placeholder="Enter search term..." @keyup.enter="search"/>
 
     <button @click="search">Search PDFs</button>
@@ -74,10 +164,48 @@
             'Agendas/example1.pdf',
             'Minutes/example2.pdf',
             'Packets/example3.pdf'
-          ]
+          ],
+          filters: {
+            documentTypes: {
+              agendas: true,
+              minutes: true,
+              packets: true
+            },
+            commissions: {
+              conway: true,
+              cab: true
+            }
+          }
         };
       },
+      computed: {
+        filteredFiles() {
+          return this.pdfFiles.filter(file => {
+            // Check document type filter
+            const documentTypeMatch = 
+              (this.filters.documentTypes.agendas && file.includes('/Agendas/')) ||
+              (this.filters.documentTypes.minutes && file.includes('/Minutes/')) ||
+              (this.filters.documentTypes.packets && file.includes('/Packets/'));
+            
+            if (!documentTypeMatch) return false;
+            
+            // Check commission filter
+            const commissionMatch = 
+              (this.filters.commissions.conway && file.includes('City of Conway Council')) ||
+              (this.filters.commissions.cab && file.includes('CAB'));
+            
+            return commissionMatch;
+          });
+        }
+      },
       methods: {
+        clearFilters() {
+          this.filters.documentTypes.agendas = true;
+          this.filters.documentTypes.minutes = true;
+          this.filters.documentTypes.packets = true;
+          this.filters.commissions.conway = true;
+          this.filters.commissions.cab = true;
+        },
         async search() {
           if (!this.query.trim()) return;
 
@@ -85,7 +213,7 @@
           this.results = [];
           this.searched = true;
 
-          for (const path of this.pdfFiles) {
+          for (const path of this.filteredFiles) {
             try {
               const pdf = await pdfjsLib.getDocument(path).promise;
               for (let i = 1; i <= pdf.numPages; i++) {
