@@ -150,6 +150,7 @@
           .then(response => response.json())
           .then(data => {
             this.pdfFiles = data.Agendas.concat(data.Minutes, data.Packets);
+            console.log('Loaded pdfFiles from manifest:', this.pdfFiles);
           }).catch(error => {
             console.error('Error loading manifest:', error);
           });
@@ -160,11 +161,7 @@
           results: [],
           loading: false,
           searched: false,
-          pdfFiles: [
-            'Agendas/example1.pdf',
-            'Minutes/example2.pdf',
-            'Packets/example3.pdf'
-          ],
+          pdfFiles: [],
           filters: {
             documentTypes: {
               agendas: true,
@@ -180,22 +177,34 @@
       },
       computed: {
         filteredFiles() {
-          return this.pdfFiles.filter(file => {
+          
+          if (this.pdfFiles.length === 0) {
+            return [];
+          }
+          
+          const filtered = this.pdfFiles.filter((file, index) => {
+            
             // Check document type filter
             const documentTypeMatch = 
-              (this.filters.documentTypes.agendas && file.includes('/Agendas/')) ||
-              (this.filters.documentTypes.minutes && file.includes('/Minutes/')) ||
-              (this.filters.documentTypes.packets && file.includes('/Packets/'));
+              (this.filters.documentTypes.agendas && file.includes('Agendas/')) ||
+              (this.filters.documentTypes.minutes && file.includes('Minutes/')) ||
+              (this.filters.documentTypes.packets && file.includes('Packets/'));
             
-            if (!documentTypeMatch) return false;
+            
+            if (!documentTypeMatch) {
+              return false;
+            }
             
             // Check commission filter
             const commissionMatch = 
-              (this.filters.commissions.conway && file.includes('City of Conway Council')) ||
+              (this.filters.commissions.conway && file.includes('Council')) ||
               (this.filters.commissions.cab && file.includes('CAB'));
+            
             
             return commissionMatch;
           });
+          
+          return filtered;
         }
       },
       methods: {
