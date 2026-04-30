@@ -2,46 +2,69 @@ const fs = require("fs/promises");
 const cheerio = require("cheerio");
 
 const PAGE_URL =
-  "https://www.conwaysc.gov/departments/administration_new/agendas___minutes.php";
+    "https://www.conwaysc.gov/departments/administration_new/agendas___minutes.php";
 
 async function main() {
-  const response = await fetch(PAGE_URL);
+    const response = await fetch(PAGE_URL);
 
-  if (!response.ok) {
-    throw new Error(`Failed to fetch page: ${response.status}`);
-  }
+    if (!response.ok) {
+        throw new Error(`Failed to fetch page: ${response.status}`);
+    }
 
-  const html = await response.text();
-  const $ = cheerio.load(html);
+    const html = await response.text();
+    const $ = cheerio.load(html);
 
-  const documents = [];
+    const documents = [];
 
-  $("a").each((_, element) => {
-    const text = $(element).text().trim();
-    const href = $(element).attr("href");
+    $("a").each((_, element) => {
+        const text = $(element).text().trim();
+        const href = $(element).attr("href");
 
-    if (!href) return;
-    if (!href.toLowerCase().includes(".pdf")) return;
+        if (!href) return;
+        if (!href.toLowerCase().includes(".pdf")) return;
 
-    const absoluteUrl = new URL(href, PAGE_URL).href;
-
-    documents.push({
-      title: text || absoluteUrl.split("/").pop(),
-      url: absoluteUrl
+        const absoluteUrl = new URL(href, PAGE_URL).href;
+        const fileName = decodeURIComponent(
+            absoluteUrl.split("/").pop().split("?")[0]
+        ).toUpperCase();
+        documents.push({
+            title: text || fileName,
+            url: absoluteUrl,
+            commission: getCommission(fileName),
+            documentType: getDocumentType(fileName)
+        });
     });
-  });
 
-  await fs.mkdir("public", { recursive: true });
+    await fs.mkdir("public", { recursive: true });
 
-  await fs.writeFile(
-    "public/documents.json",
-    JSON.stringify(documents, null, 2)
-  );
+    await fs.writeFile(
+        "public/documents.json",
+        JSON.stringify(documents, null, 2)
+    );
 
-  console.log(`Saved ${documents.length} document links.`);
+    console.log(`Saved ${documents.length} document links.`);
 }
+function getCommission(fileName) {
+    if (fileName.includes("CAB")) return "Community Appearance Board";
+    if (fileName.includes("BZA")) return "Board of Zoning Appeals";
+    if (fileName.includes("PC")) return "Planning Commission";
+    if (fileName.includes("KCB")) return "Keep Conway Beautiful";
+    if (fileName.includes("TREE")) return "Tree Board";
+    if (fileName.includes("WATER QUALITY")) return "Water Quality & Drainage Commission";
+    if (fileName.includes("COUNCIL")) return "City Council";
 
+    return "Unknown";
+}
+function getDocumentType(fileName) {
+    const name = fileName.toUpperCase();
+
+    if (name.includes("AGENDA")) return "Agenda";
+    if (name.includes("PACKET")) return "Packet";
+    if (name.includes("MINUTES")) return "Minutes";
+
+    return "Other";
+}
 main().catch((error) => {
-  console.error(error);
-  process.exit(1);
+    console.error(error);
+    process.exit(1);
 });
