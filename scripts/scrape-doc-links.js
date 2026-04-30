@@ -28,7 +28,7 @@ async function main() {
             absoluteUrl.split("/").pop().split("?")[0]
         ).toUpperCase();
         documents.push({
-            title: text || fileName,
+            title: fileName.replace(".PDF", ""),
             url: absoluteUrl,
             commission: getCommission(fileName),
             documentType: getDocumentType(fileName)
