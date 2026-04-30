@@ -1,8 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Council Minutes Search</title>
 
   <!-- Vue.js via CDN -->
@@ -18,48 +19,58 @@
       max-width: 800px;
       margin: auto;
     }
+
     input[type="text"] {
       width: 100%;
       padding: 0.5rem;
       margin-bottom: 1rem;
       font-size: 1rem;
     }
+
     .result {
       margin: 1rem 0;
       padding: 1rem;
       border: 1px solid #ccc;
     }
+
     .filters {
       margin: 1rem 0;
       padding: 1rem;
       border: 1px solid #eee;
       background-color: #f9f9f9;
     }
+
     .filter-section {
       margin-bottom: 1rem;
     }
+
     .filter-section h3 {
       margin: 0 0 0.5rem 0;
       font-size: 1rem;
       color: #333;
     }
+
     .filter-options {
       display: flex;
       flex-wrap: wrap;
       gap: 1rem;
     }
+
     .filter-option {
       display: flex;
       align-items: center;
       gap: 0.5rem;
     }
+
     .filter-option input[type="checkbox"] {
       margin: 0;
     }
+
     .filter-option label {
       font-size: 0.9rem;
       cursor: pointer;
     }
+
     button {
       padding: 0.5rem 1rem;
       font-size: 1rem;
@@ -70,22 +81,53 @@
       cursor: pointer;
       margin-bottom: 1rem;
     }
+
     button:hover {
       background-color: #0056b3;
     }
+
     .clear-filters {
       background-color: #6c757d;
       margin-left: 1rem;
     }
+
     .clear-filters:hover {
       background-color: #545b62;
     }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+
+    .modal-content {
+      background: white;
+      width: min(95vw, 1000px);
+      max-height: 90vh;
+      padding: 1rem;
+      border-radius: 8px;
+      overflow: auto;
+    }
+
+    .modal-close {
+      margin-bottom: 0.75rem;
+    }
+
+    .result {
+      cursor: pointer;
+    }
   </style>
 </head>
+
 <body>
   <div id="app">
     <h1>Search Council Documents</h1>
-    
+
     <!-- Document Type Filter -->
     <div class="filters">
       <div class="filter-section">
@@ -105,7 +147,7 @@
           </div>
         </div>
       </div>
-      
+
       <!-- Commission Filter -->
       <div class="filter-section">
         <h3>Commission</h3>
@@ -120,11 +162,11 @@
           </div>
         </div>
       </div>
-      
+
       <button @click="clearFilters" class="clear-filters">Clear All Filters</button>
     </div>
 
-    <input type="text" v-model="query" placeholder="Enter search term..." @keyup.enter="search"/>
+    <input type="text" v-model="query" placeholder="Enter search term..." @keyup.enter="search" />
 
     <button @click="search">Search PDFs</button>
 
@@ -132,13 +174,19 @@
 
     <div v-if="results.length > 0">
       <h2>Results</h2>
-      <div v-for="result in results" :key="result.file" class="result">
-        <strong>{{ result.file }}</strong><br/>
+      <div v-for="result in results" :key="result.file" class="result" @click="openPdf(result.file)">
+        <strong>{{ result.file }}</strong><br />
         Match found: {{ result.match }}
       </div>
     </div>
 
     <div v-else-if="!loading && searched">No matches found.</div>
+    <div v-if="showPdfModal" class="modal-backdrop" @click.self="closePdfModal">
+      <div class="modal-content">
+        <button class="modal-close" @click="closePdfModal">Close</button>
+        <iframe v-if="selectedPdfPath" :src="selectedPdfPath" width="100%" height="600" style="border: none;"></iframe>
+      </div>
+    </div>
   </div>
 
   <script>
@@ -162,6 +210,8 @@
           loading: false,
           searched: false,
           pdfFiles: [],
+          showPdfModal: false,
+          selectedPdfPath: '',
           filters: {
             documentTypes: {
               agendas: true,
@@ -177,33 +227,33 @@
       },
       computed: {
         filteredFiles() {
-          
+
           if (this.pdfFiles.length === 0) {
             return [];
           }
-          
+
           const filtered = this.pdfFiles.filter((file, index) => {
-            
+
             // Check document type filter
-            const documentTypeMatch = 
+            const documentTypeMatch =
               (this.filters.documentTypes.agendas && file.includes('Agendas/')) ||
               (this.filters.documentTypes.minutes && file.includes('Minutes/')) ||
               (this.filters.documentTypes.packets && file.includes('Packets/'));
-            
-            
+
+
             if (!documentTypeMatch) {
               return false;
             }
-            
+
             // Check commission filter
-            const commissionMatch = 
+            const commissionMatch =
               (this.filters.commissions.conway && file.includes('Council')) ||
               (this.filters.commissions.cab && file.includes('CAB'));
-            
-            
+
+
             return commissionMatch;
           });
-          
+
           return filtered;
         }
       },
@@ -245,8 +295,18 @@
 
           this.loading = false;
         }
+
+      },
+      openPdf(path) {
+        this.selectedPdfPath = path;
+        this.showPdfModal = true;
+      },
+      closePdfModal() {
+        this.showPdfModal = false;
+        this.selectedPdfPath = '';
       }
     }).mount('#app');
   </script>
 </body>
+
 </html>
