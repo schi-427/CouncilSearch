@@ -294,16 +294,15 @@
           }
 
           this.loading = false;
+        },
+        openPdf(path) {
+          this.selectedPdfPath = path;
+          this.showPdfModal = true;
+        },
+        closePdfModal() {
+          this.showPdfModal = false;
+          this.selectedPdfPath = '';
         }
-
-      },
-      openPdf(path) {
-        this.selectedPdfPath = path;
-        this.showPdfModal = true;
-      },
-      closePdfModal() {
-        this.showPdfModal = false;
-        this.selectedPdfPath = '';
       }
     }).mount('#app');
   </script>
