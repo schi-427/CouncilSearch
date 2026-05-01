@@ -3,7 +3,7 @@ name: Scrape document links
 on:
   workflow_dispatch:
   schedule:
-    - cron: "0 8 * * 1"
+    - cron: "0 8 * * *" # Every day at 8:00 AM
 
 jobs:
   scrape:
