@@ -154,6 +154,15 @@
         <h3>Commission</h3>
         <div class="filter-options">
           <div class="filter-option">
+            <input type="checkbox" id="conway" v-model="filters.commissions.conway">
+            <label for="conway">City Council</label>
+          </div>
+
+          <div class="filter-option">
+            <input type="checkbox" id="cab" v-model="filters.commissions.cab">
+            <label for="cab">Community Appearance Board</label>
+          </div>
+          <div class="filter-option">
             <input type="checkbox" id="kcb" v-model="filters.commissions.kcb">
             <label for="kcb">Keep Conway Beautiful</label>
           </div>
@@ -193,7 +202,13 @@
       </div>
     </div>
 
-    <div v-else-if="!loading && searched">No matches found.</div>
+    <div v-if="searched && !loading">
+      <h2>Results ({{ results.length }} match<span v-if="results.length !== 1">es</span>)</h2>
+      <small>
+        Searched {{filteredDocuments.length}} documents
+      </small>
+      <div v-if="results.length === 0">No matches found.</div>
+    </div>
     <div v-if="showPdfModal" class="modal-backdrop" @click.self="closePdfModal">
       <div class="modal-content">
         <div style="display: flex; gap: 0.5rem; margin-bottom: 0.75rem;">
@@ -276,6 +291,10 @@
       },
       methods: {
         clearFilters() {
+          this.filters.documentTypes.agendas = true;
+          this.filters.documentTypes.minutes = true;
+          this.filters.documentTypes.packets = true;
+
           this.filters.commissions.conway = true;
           this.filters.commissions.cab = true;
           this.filters.commissions.kcb = true;
