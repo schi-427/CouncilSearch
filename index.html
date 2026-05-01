@@ -203,7 +203,7 @@
 
     createApp({
       mounted() {
-        fetch('search-index.json')
+        fetch('public/search-index.json')
           .then(response => response.json())
           .then(data => {
             this.documents = data;
