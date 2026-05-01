@@ -9,9 +9,6 @@
   <!-- Vue.js via CDN -->
   <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
 
-  <!-- PDF.js (we'll wire this up later) -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.5.141/pdf.min.js"></script>
-
   <style>
     body {
       font-family: sans-serif;
@@ -153,12 +150,24 @@
         <h3>Commission</h3>
         <div class="filter-options">
           <div class="filter-option">
-            <input type="checkbox" id="conway" v-model="filters.commissions.conway">
-            <label for="conway">City of Conway Council</label>
+            <input type="checkbox" id="kcb" v-model="filters.commissions.kcb">
+            <label for="kcb">Keep Conway Beautiful</label>
           </div>
           <div class="filter-option">
-            <input type="checkbox" id="cab" v-model="filters.commissions.cab">
-            <label for="cab">Community Appearance Board (CAB)</label>
+            <input type="checkbox" id="bza" v-model="filters.commissions.bza">
+            <label for="bza">Board of Zoning Appeals</label>
+          </div>
+          <div class="filter-option">
+            <input type="checkbox" id="pc" v-model="filters.commissions.pc">
+            <label for="pc">Planning Commission</label>
+          </div>
+          <div class="filter-option">
+            <input type="checkbox" id="tree" v-model="filters.commissions.tree">
+            <label for="tree">Tree Board</label>
+          </div>
+          <div class="filter-option">
+            <input type="checkbox" id="water" v-model="filters.commissions.water">
+            <label for="water">Water Quality and Drainage Commission</label>
           </div>
         </div>
       </div>
@@ -168,14 +177,14 @@
 
     <input type="text" v-model="query" placeholder="Enter search term..." @keyup.enter="search" />
 
-    <button @click="search">Search PDFs</button>
-
-    <div v-if="loading">Searching PDFs…</div>
+    <button @click="search">Search Documents</button>
+    <div v-if="loading">Searching Documents...</div>
 
     <div v-if="results.length > 0">
       <h2>Results</h2>
-      <div v-for="result in results" :key="result.file" class="result" @click="openPdf(result.file)">
-        <strong>{{ result.file }}</strong><br />
+      <div v-for="result in results" :key="result.url" class="result" @click="openPdf(result.url)">
+        <strong>{{ result.title }}</strong><br />
+        <small>{{ result.commission }} · {{ result.documentType }}</small><br />
         Match found: {{ result.match }}
       </div>
     </div>
@@ -194,13 +203,14 @@
 
     createApp({
       mounted() {
-        fetch('manifest.json')
+        fetch('search-index.json')
           .then(response => response.json())
           .then(data => {
-            this.pdfFiles = data.Agendas.concat(data.Minutes, data.Packets);
-            console.log('Loaded pdfFiles from manifest:', this.pdfFiles);
-          }).catch(error => {
-            console.error('Error loading manifest:', error);
+            this.documents = data;
+            console.log('Loaded documents:', this.documents);
+          })
+          .catch(error => {
+            console.error('Error loading search-index:', error);
           });
       },
       data() {
@@ -209,7 +219,7 @@
           results: [],
           loading: false,
           searched: false,
-          pdfFiles: [],
+          documents: [],
           showPdfModal: false,
           selectedPdfPath: '',
           filters: {
@@ -220,78 +230,68 @@
             },
             commissions: {
               conway: true,
-              cab: true
+              cab: true,
+              kcb: true,
+              bza: true,
+              pc: true,
+              tree: true,
+              water: true
             }
           }
         };
       },
       computed: {
-        filteredFiles() {
-
-          if (this.pdfFiles.length === 0) {
-            return [];
-          }
-
-          const filtered = this.pdfFiles.filter((file, index) => {
-
-            // Check document type filter
+        filteredDocuments() {
+          return this.documents.filter(doc => {
             const documentTypeMatch =
-              (this.filters.documentTypes.agendas && file.includes('Agendas/')) ||
-              (this.filters.documentTypes.minutes && file.includes('Minutes/')) ||
-              (this.filters.documentTypes.packets && file.includes('Packets/'));
+              (this.filters.documentTypes.agendas && doc.documentType === 'Agenda') ||
+              (this.filters.documentTypes.minutes && doc.documentType === 'Minutes') ||
+              (this.filters.documentTypes.packets && doc.documentType === 'Packet');
 
+            if (!documentTypeMatch) return false;
 
-            if (!documentTypeMatch) {
-              return false;
-            }
-
-            // Check commission filter
             const commissionMatch =
-              (this.filters.commissions.conway && file.includes('Council')) ||
-              (this.filters.commissions.cab && file.includes('CAB'));
-
+              (this.filters.commissions.conway && doc.commission === 'City Council') ||
+              (this.filters.commissions.cab && doc.commission === 'Community Appearance Board') ||
+              (this.filters.commissions.kcb && doc.commission === 'Keep Conway Beautiful') ||
+              (this.filters.commissions.bza && doc.commission === 'Board of Zoning Appeals') ||
+              (this.filters.commissions.pc && doc.commission === 'Planning Commission') ||
+              (this.filters.commissions.tree && doc.commission === 'Tree Board') ||
+              (this.filters.commissions.water && doc.commission === 'Water Quality and Drainage Commission');
 
             return commissionMatch;
           });
-
-          return filtered;
         }
       },
       methods: {
         clearFilters() {
-          this.filters.documentTypes.agendas = true;
-          this.filters.documentTypes.minutes = true;
-          this.filters.documentTypes.packets = true;
           this.filters.commissions.conway = true;
           this.filters.commissions.cab = true;
+          this.filters.commissions.kcb = true;
+          this.filters.commissions.bza = true;
+          this.filters.commissions.pc = true;
+          this.filters.commissions.tree = true;
+          this.filters.commissions.water = true;
         },
-        async search() {
+        search() {
           if (!this.query.trim()) return;
 
           this.loading = true;
           this.results = [];
           this.searched = true;
 
-          for (const path of this.filteredFiles) {
-            try {
-              const pdf = await pdfjsLib.getDocument(path).promise;
-              for (let i = 1; i <= pdf.numPages; i++) {
-                const page = await pdf.getPage(i);
-                const content = await page.getTextContent();
-                const text = content.items.map(item => item.str).join(' ');
+          const query = this.query.toLowerCase();
 
-                if (text.toLowerCase().includes(this.query.toLowerCase())) {
-                  this.results.push({
-                    file: path,
-                    match: text.substring(0, 200) + '...'
-                  });
-                  break; // Stop scanning this file once a match is found
-                }
-              }
-            } catch (err) {
-              console.error(`Failed to search ${path}:`, err);
-            }
-          }
+          this.results = this.filteredDocuments
+            .filter(doc => (doc.text || '').toLowerCase().includes(query))
+            .map(doc => ({
+              title: doc.title,
+              url: doc.url,
+              commission: doc.commission,
+              documentType: doc.documentType,
+              match: this.getSnippet(doc.text, query),
+              textSource: doc.textSource
+            }));
 
           this.loading = false;
         },
@@ -302,7 +302,22 @@
         closePdfModal() {
           this.showPdfModal = false;
           this.selectedPdfPath = '';
-        }
+        },
+        getSnippet(text, query) {
+          if (!text) return '';
+
+          const lowerText = text.toLowerCase();
+          const index = lowerText.indexOf(query);
+
+          if (index === -1) {
+            return text.substring(0, 200) + '...';
+          }
+
+          const start = Math.max(0, index - 100);
+          const end = Math.min(text.length, index + query.length + 100);
+
+          return text.substring(start, end) + '...';
+        },
       }
     }).mount('#app');
   </script>
