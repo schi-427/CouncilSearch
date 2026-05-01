@@ -189,7 +189,12 @@
     </div>
 
     <input type="text" v-model="query" placeholder="Enter search term..." @keyup.enter="search" />
-
+    <label for="sortBy">Sort by:</label>
+    <select id="sortBy" v-model="sortBy" @change="search">
+      <option value="dateDesc">Date newest first</option>
+      <option value="dateAsc">Date oldest first</option>
+      <option value="relevance">Relevance</option>
+    </select>
     <button @click="search">Search Documents</button>
     <div v-if="loading">Searching Documents...</div>
     <div v-if="searched && !loading">
@@ -202,7 +207,11 @@
     <div v-if="results.length > 0">
       <div v-for="result in results" :key="result.url" class="result" @click="openPdf(result.url)">
         <strong>{{ result.title }}</strong><br />
-        <small>{{ result.commission }} · {{ result.documentType }}</small><br />
+        <small>
+          {{ result.commission }} · {{ result.documentType }}
+          <span v-if="result.date"> · {{ result.date }}</span>
+          <span v-if="query.trim()"> · {{ result.hitCount }} hit<span v-if="result.hitCount !== 1">s</span></span>
+        </small><br />
         Match found: {{ result.match }}
       </div>
     </div>
@@ -247,6 +256,7 @@
           documents: [],
           showPdfModal: false,
           selectedPdfPath: '',
+          sortBy: 'dateDesc',
           filters: {
             documentTypes: {
               agendas: true,
@@ -288,6 +298,17 @@
           });
         }
       },
+      watch: {
+        filters: {
+          deep: true,
+          handler() {
+            if (this.searched) this.search();
+          }
+        },
+        sortBy() {
+          if (this.searched) this.sortResults();
+        }
+      },
       methods: {
         clearFilters() {
           this.filters.documentTypes.agendas = true;
@@ -320,11 +341,47 @@
             url: doc.url,
             commission: doc.commission,
             documentType: doc.documentType,
+            date: doc.date,
             match: query ? this.getSnippet(doc.text || '', query) : 'All documents shown.',
+            hitCount: query ? this.countOccurrences(doc.text || '', query) : 0,
             textSource: doc.textSource
           }));
 
+          this.sortResults();
+
           this.loading = false;
+        },
+
+        sortResults() {
+          if (this.sortBy === 'relevance') {
+            this.results.sort((a, b) => b.hitCount - a.hitCount);
+            return;
+          }
+
+          if (this.sortBy === 'dateAsc') {
+            this.results.sort((a, b) => this.getDateValue(a.date) - this.getDateValue(b.date));
+            return;
+          }
+
+          this.results.sort((a, b) => this.getDateValue(b.date) - this.getDateValue(a.date));
+        },
+
+        getDateValue(date) {
+          if (!date) return 0;
+          return new Date(date).getTime() || 0;
+        },
+
+        countOccurrences(text, query) {
+          if (!text || !query) return 0;
+
+          const escapedQuery = this.escapeRegExp(query);
+          const matches = text.toLowerCase().match(new RegExp(escapedQuery, 'g'));
+
+          return matches ? matches.length : 0;
+        },
+
+        escapeRegExp(value) {
+          return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
         },
         openPdf(path) {
           this.selectedPdfPath = path;

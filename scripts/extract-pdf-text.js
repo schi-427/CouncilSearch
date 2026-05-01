@@ -88,7 +88,23 @@ function isUsefulText(text) {
 
     return true;
 }
+function extractDateFromTitle(title) {
+    const match = title.match(/(\d{1,2})[./-](\d{1,2})[./-](\d{2,4})/);
 
+    if (!match) return null;
+
+    let [, month, day, year] = match;
+
+    if (year.length === 2) {
+        year = Number(year) >= 70 ? `19${year}` : `20${year}`;
+    }
+
+    const date = new Date(Number(year), Number(month) - 1, Number(day));
+
+    if (Number.isNaN(date.getTime())) return null;
+
+    return date.toISOString().slice(0, 10);
+}
 async function main() {
     const raw = await fs.readFile(INPUT_FILE, "utf8");
     const documents = JSON.parse(raw);
@@ -115,6 +131,7 @@ async function main() {
                 url: doc.url,
                 commission: doc.commission,
                 documentType: doc.documentType,
+                date: extractDateFromTitle(doc.title),
                 text,
                 textSource
             });
