@@ -18,6 +18,22 @@ async function extractTextFromPdf(url) {
 
     return result.text.replace(/\s+/g, " ").trim();
 }
+function isUsefulText(text) {
+    if (!text) return false;
+
+    const cleaned = text.replace(/\s+/g, " ").trim();
+
+    if (cleaned.length < 100) return false;
+
+    // catches: -- 1 of 5 -- -- 2 of 5 --
+    const withoutPageMarkers = cleaned
+        .replace(/--\s*\d+\s+of\s+\d+\s*--/gi, "")
+        .trim();
+
+    if (withoutPageMarkers.length < 100) return false;
+
+    return true;
+}
 
 async function main() {
     const raw = await fs.readFile(INPUT_FILE, "utf8");
@@ -29,7 +45,14 @@ async function main() {
         console.log(`Processing ${index + 1}/${documents.length}: ${doc.title}`);
 
         try {
-            const text = await extractTextFromPdf(doc.url);
+            let text = await extractTextWithPdfParse(pdfBuffer);
+            let textSource = "embedded";
+
+            if (!isUsefulText(text)) {
+                console.log(`Running OCR for ${doc.title}`);
+                text = await extractTextWithOcr(pdfBuffer, doc.title);
+                textSource = "ocr";
+            }
 
             searchIndex.push({
                 title: doc.title,
