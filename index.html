@@ -194,6 +194,13 @@
     <div v-if="loading">Searching Documents...</div>
 
     <div v-if="results.length > 0">
+      <div v-if="searched && !loading">
+        <h2>Results ({{ results.length }} match<span v-if="results.length !== 1">es</span>)</h2>
+        <small>
+          Searched {{filteredDocuments.length}} documents
+        </small>
+        <div v-if="results.length === 0">No matches found.</div>
+      </div>
       <h2>Results</h2>
       <div v-for="result in results" :key="result.url" class="result" @click="openPdf(result.url)">
         <strong>{{ result.title }}</strong><br />
@@ -202,13 +209,7 @@
       </div>
     </div>
 
-    <div v-if="searched && !loading">
-      <h2>Results ({{ results.length }} match<span v-if="results.length !== 1">es</span>)</h2>
-      <small>
-        Searched {{filteredDocuments.length}} documents
-      </small>
-      <div v-if="results.length === 0">No matches found.</div>
-    </div>
+
     <div v-if="showPdfModal" class="modal-backdrop" @click.self="closePdfModal">
       <div class="modal-content">
         <div style="display: flex; gap: 0.5rem; margin-bottom: 0.75rem;">
