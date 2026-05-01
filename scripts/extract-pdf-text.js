@@ -45,7 +45,7 @@ async function main() {
         console.log(`Processing ${index + 1}/${documents.length}: ${doc.title}`);
 
         try {
-            let text = await extractTextWithPdfParse(pdfBuffer);
+            let text = await extractTextFromPdf(doc.url);
             let textSource = "embedded";
 
             if (!isUsefulText(text)) {
