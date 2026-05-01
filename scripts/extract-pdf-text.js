@@ -2,8 +2,14 @@ const fs = require("fs/promises");
 const { PDFParse } = require("pdf-parse");
 const INPUT_FILE = "public/documents.json";
 const OUTPUT_FILE = "public/search-index.json";
+const os = require("os");
+const path = require("path");
+const { execFile } = require("child_process");
+const { promisify } = require("util");
 
-async function extractTextFromPdf(url) {
+const execFileAsync = promisify(execFile);
+
+async function downloadPdfBuffer(url) {
     const response = await fetch(url);
 
     if (!response.ok) {
@@ -11,12 +17,60 @@ async function extractTextFromPdf(url) {
     }
 
     const arrayBuffer = await response.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
+    return Buffer.from(arrayBuffer);
+}
 
+async function extractTextFromPdfBuffer(buffer) {
     const parser = new PDFParse({ data: buffer });
     const result = await parser.getText();
 
     return result.text.replace(/\s+/g, " ").trim();
+}
+
+async function extractTextWithOcr(buffer, title) {
+    const safeTitle = title.replace(/[^a-z0-9]/gi, "_").toLowerCase();
+    const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), `${safeTitle}_`));
+
+    const pdfPath = path.join(tempDir, "document.pdf");
+    const imagePrefix = path.join(tempDir, "page");
+
+    await fs.writeFile(pdfPath, buffer);
+
+    // Convert PDF pages to PNG images
+    await execFileAsync("pdftoppm", [
+        "-png",
+        "-r",
+        "200",
+        pdfPath,
+        imagePrefix
+    ]);
+
+    const files = await fs.readdir(tempDir);
+    const imageFiles = files
+        .filter(file => file.endsWith(".png"))
+        .sort();
+
+    const pageTexts = [];
+
+    for (const imageFile of imageFiles) {
+        const imagePath = path.join(tempDir, imageFile);
+
+        const { stdout } = await execFileAsync("tesseract", [
+            imagePath,
+            "stdout",
+            "-l",
+            "eng"
+        ]);
+
+        pageTexts.push(stdout.trim());
+    }
+
+    await fs.rm(tempDir, { recursive: true, force: true });
+
+    return pageTexts
+        .join("\n\n")
+        .replace(/\s+/g, " ")
+        .trim();
 }
 function isUsefulText(text) {
     if (!text) return false;
@@ -45,7 +99,9 @@ async function main() {
         console.log(`Processing ${index + 1}/${documents.length}: ${doc.title}`);
 
         try {
-            let text = await extractTextFromPdf(doc.url);
+            const pdfBuffer = await downloadPdfBuffer(doc.url);
+
+            let text = await extractTextFromPdfBuffer(pdfBuffer);
             let textSource = "embedded";
 
             if (!isUsefulText(text)) {
@@ -59,7 +115,8 @@ async function main() {
                 url: doc.url,
                 commission: doc.commission,
                 documentType: doc.documentType,
-                text
+                text,
+                textSource
             });
         } catch (error) {
             console.error(`Skipping ${doc.title}`);
