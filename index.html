@@ -192,15 +192,14 @@
 
     <button @click="search">Search Documents</button>
     <div v-if="loading">Searching Documents...</div>
-      <div v-if="searched && !loading">
-        <h2>Results ({{ results.length }} match<span v-if="results.length !== 1">es</span>)</h2>
-        <small>
-          Searched {{filteredDocuments.length}} documents
-        </small>
-        <div v-if="results.length === 0">No matches found.</div>
-      </div>
+    <div v-if="searched && !loading">
+      <h2>Results ({{ results.length }} match<span v-if="results.length !== 1">es</span>)</h2>
+      <small>
+        Searched {{filteredDocuments.length}} documents
+      </small>
+      <div v-if="results.length === 0">No matches found.</div>
+    </div>
     <div v-if="results.length > 0">
-      <h2>Results</h2>
       <div v-for="result in results" :key="result.url" class="result" @click="openPdf(result.url)">
         <strong>{{ result.title }}</strong><br />
         <small>{{ result.commission }} · {{ result.documentType }}</small><br />
@@ -304,24 +303,26 @@
           this.filters.commissions.water = true;
         },
         search() {
-          if (!this.query.trim()) return;
-
           this.loading = true;
           this.results = [];
           this.searched = true;
 
-          const query = this.query.toLowerCase();
+          const query = this.query.trim().toLowerCase();
 
-          this.results = this.filteredDocuments
-            .filter(doc => (doc.text || '').toLowerCase().includes(query))
-            .map(doc => ({
-              title: doc.title,
-              url: doc.url,
-              commission: doc.commission,
-              documentType: doc.documentType,
-              match: this.getSnippet(doc.text, query),
-              textSource: doc.textSource
-            }));
+          const matchingDocuments = query
+            ? this.filteredDocuments.filter(doc =>
+              (doc.text || '').toLowerCase().includes(query)
+            )
+            : this.filteredDocuments;
+
+          this.results = matchingDocuments.map(doc => ({
+            title: doc.title,
+            url: doc.url,
+            commission: doc.commission,
+            documentType: doc.documentType,
+            match: query ? this.getSnippet(doc.text || '', query) : 'All documents shown.',
+            textSource: doc.textSource
+          }));
 
           this.loading = false;
         },
