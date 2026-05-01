@@ -105,10 +105,14 @@
     .modal-content {
       background: white;
       width: min(95vw, 1000px);
+      height: 80vh;
       max-height: 90vh;
       padding: 1rem;
       border-radius: 8px;
       overflow: auto;
+      resize: both;
+      min-width: 400px;
+      min-height: 400px;
     }
 
     .modal-close {
@@ -192,8 +196,15 @@
     <div v-else-if="!loading && searched">No matches found.</div>
     <div v-if="showPdfModal" class="modal-backdrop" @click.self="closePdfModal">
       <div class="modal-content">
-        <button class="modal-close" @click="closePdfModal">Close</button>
-        <iframe v-if="selectedPdfPath" :src="selectedPdfPath" width="100%" height="600" style="border: none;"></iframe>
+        <div style="display: flex; gap: 0.5rem; margin-bottom: 0.75rem;">
+          <button class="modal-close" @click="closePdfModal">Close</button>
+
+          <a v-if="selectedPdfPath" :href="selectedPdfPath" target="_blank" rel="noopener noreferrer">
+            <button type="button">Open on City's Site</button>
+          </a>
+        </div>
+        <iframe v-if="selectedPdfPath" :src="selectedPdfPath" width="100%" height="100%" style="border: none;">
+        </iframe>
       </div>
     </div>
   </div>
