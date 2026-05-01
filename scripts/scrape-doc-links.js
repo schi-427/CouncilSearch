@@ -3,6 +3,7 @@ const cheerio = require("cheerio");
 
 const PAGE_URL =
     "https://www.conwaysc.gov/departments/administration_new/agendas___minutes.php";
+const PDF_BASE_URL = "https://cms1files.revize.com/conway/";
 
 async function main() {
     const response = await fetch(PAGE_URL);
@@ -23,7 +24,7 @@ async function main() {
         if (!href) return;
         if (!href.toLowerCase().includes(".pdf")) return;
 
-        const absoluteUrl = new URL(href, PAGE_URL).href;
+        const absoluteUrl = new URL(href.split("/").pop(), PDF_BASE_URL).href;
         const fileName = decodeURIComponent(
             absoluteUrl.split("/").pop().split("?")[0]
         ).toUpperCase();
