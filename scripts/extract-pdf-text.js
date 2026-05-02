@@ -89,21 +89,57 @@ function isUsefulText(text) {
     return true;
 }
 function extractDateFromTitle(title) {
-    const match = title.match(/(\d{1,2})[./-](\d{1,2})[./-](\d{2,4})/);
+  if (!title) return null;
 
-    if (!match) return null;
+  // 1. Try numeric formats first (e.g., 3.26.26 or 03/26/2026)
+  const numericMatch = title.match(/(\d{1,2})[./-](\d{1,2})[./-](\d{2,4})/);
 
-    let [, month, day, year] = match;
+  if (numericMatch) {
+    let [, month, day, year] = numericMatch;
 
     if (year.length === 2) {
-        year = Number(year) >= 70 ? `19${year}` : `20${year}`;
+      year = Number(year) >= 70 ? `19${year}` : `20${year}`;
     }
 
     const date = new Date(Number(year), Number(month) - 1, Number(day));
 
-    if (Number.isNaN(date.getTime())) return null;
+    if (!Number.isNaN(date.getTime())) {
+      return date.toISOString().slice(0, 10);
+    }
+  }
 
-    return date.toISOString().slice(0, 10);
+  // 2. Try "Month YYYY" format (e.g., February 2026)
+  const monthMatch = title.match(
+    /(January|February|March|April|May|June|July|August|September|October|November|December)\s+(\d{4})/i
+  );
+
+  if (monthMatch) {
+    const [, monthName, year] = monthMatch;
+
+    const monthMap = {
+      january: 0,
+      february: 1,
+      march: 2,
+      april: 3,
+      may: 4,
+      june: 5,
+      july: 6,
+      august: 7,
+      september: 8,
+      october: 9,
+      november: 10,
+      december: 11
+    };
+
+    const monthIndex = monthMap[monthName.toLowerCase()];
+
+    if (monthIndex !== undefined) {
+      const date = new Date(Number(year), monthIndex, 1);
+      return date.toISOString().slice(0, 10);
+    }
+  }
+
+  return null;
 }
 async function main() {
     const raw = await fs.readFile(INPUT_FILE, "utf8");
