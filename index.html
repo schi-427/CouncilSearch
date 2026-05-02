@@ -182,12 +182,18 @@
             <input type="checkbox" id="water" v-model="filters.commissions.water">
             <label for="water">Water Quality and Drainage Commission</label>
           </div>
+          <div class="filter-option">
+            <input type="checkbox" id="unknown" v-model="filters.commissions.unknown">
+            <label for="unknown">Unknown</label>
+          </div>
         </div>
       </div>
 
       <button @click="clearFilters" class="clear-filters">Clear All Filters</button>
     </div>
-
+    <small>
+      “Unknown” means the system could not detect which commission the document belongs to.
+    </small>
     <input type="text" v-model="query" placeholder="Enter search term..." @keyup.enter="search" />
     <label for="sortBy">Sort by:</label>
     <select id="sortBy" v-model="sortBy" @change="search">
@@ -195,6 +201,7 @@
       <option value="dateAsc">Date oldest first</option>
       <option value="relevance">Relevance</option>
     </select>
+    <br />
     <button @click="search">Search Documents</button>
     <div v-if="loading">Searching Documents...</div>
     <div v-if="searched && !loading">
@@ -270,7 +277,8 @@
               bza: true,
               pc: true,
               tree: true,
-              water: true
+              water: true,
+              unknown: true
             }
           }
         };
@@ -292,8 +300,8 @@
               (this.filters.commissions.bza && doc.commission === 'Board of Zoning Appeals') ||
               (this.filters.commissions.pc && doc.commission === 'Planning Commission') ||
               (this.filters.commissions.tree && doc.commission === 'Tree Board') ||
-              (this.filters.commissions.water && doc.commission === 'Water Quality and Drainage Commission');
-
+              (this.filters.commissions.water && doc.commission === 'Water Quality and Drainage Commission') ||
+              (this.filters.commissions.unknown && doc.commission === 'Unknown');
             return commissionMatch;
           });
         }
@@ -322,6 +330,7 @@
           this.filters.commissions.pc = true;
           this.filters.commissions.tree = true;
           this.filters.commissions.water = true;
+          this.filters.commissions.unknown = true;
         },
         search() {
           this.loading = true;
