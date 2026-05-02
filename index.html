@@ -190,6 +190,8 @@
       </div>
 
       <button @click="clearFilters" class="clear-filters">Clear All Filters</button>
+      <br />
+      <br />
       <small>
         “Unknown” means the system could not detect which commission the document belongs to.
       </small>
@@ -198,6 +200,8 @@
     <input type="text" v-model="query" placeholder="Enter search term..." @keyup.enter="search" />
     <br />
     <button @click="search">Search Documents</button>
+    <br />
+    <br />
     <label for="sortBy">Sort by:</label>
     <select id="sortBy" v-model="sortBy" @change="search">
       <option value="dateDesc">Date newest first</option>
