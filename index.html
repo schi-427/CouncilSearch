@@ -182,20 +182,32 @@
             <input type="checkbox" id="water" v-model="filters.commissions.water">
             <label for="water">Water Quality and Drainage Commission</label>
           </div>
+          <div class="filter-option">
+            <input type="checkbox" id="unknown" v-model="filters.commissions.unknown">
+            <label for="unknown">Unknown</label>
+          </div>
         </div>
       </div>
 
       <button @click="clearFilters" class="clear-filters">Clear All Filters</button>
+      <br />
+      <br />
+      <small>
+        “Unknown” means the system could not detect which commission the document belongs to.
+      </small>
     </div>
 
     <input type="text" v-model="query" placeholder="Enter search term..." @keyup.enter="search" />
+    <br />
+    <button @click="search">Search Documents</button>
+    <br />
+    <br />
     <label for="sortBy">Sort by:</label>
     <select id="sortBy" v-model="sortBy" @change="search">
       <option value="dateDesc">Date newest first</option>
       <option value="dateAsc">Date oldest first</option>
       <option value="relevance">Relevance</option>
     </select>
-    <button @click="search">Search Documents</button>
     <div v-if="loading">Searching Documents...</div>
     <div v-if="searched && !loading">
       <h2>Results ({{ results.length }} match<span v-if="results.length !== 1">es</span>)</h2>
@@ -270,7 +282,8 @@
               bza: true,
               pc: true,
               tree: true,
-              water: true
+              water: true,
+              unknown: true
             }
           }
         };
@@ -292,8 +305,8 @@
               (this.filters.commissions.bza && doc.commission === 'Board of Zoning Appeals') ||
               (this.filters.commissions.pc && doc.commission === 'Planning Commission') ||
               (this.filters.commissions.tree && doc.commission === 'Tree Board') ||
-              (this.filters.commissions.water && doc.commission === 'Water Quality and Drainage Commission');
-
+              (this.filters.commissions.water && doc.commission === 'Water Quality and Drainage Commission') ||
+              (this.filters.commissions.unknown && doc.commission === 'Unknown');
             return commissionMatch;
           });
         }
@@ -322,6 +335,7 @@
           this.filters.commissions.pc = true;
           this.filters.commissions.tree = true;
           this.filters.commissions.water = true;
+          this.filters.commissions.unknown = true;
         },
         search() {
           this.loading = true;
