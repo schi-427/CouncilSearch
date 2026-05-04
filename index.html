@@ -122,12 +122,25 @@
     .result {
       cursor: pointer;
     }
+
+    .about-section {
+      margin-top: 3rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid #ddd;
+      color: #555;
+      font-size: 0.9rem;
+    }
+
+    .about-section h2 {
+      color: #333;
+      font-size: 1.2rem;
+    }
   </style>
 </head>
 
 <body>
   <div id="app">
-    <h1>Search Council Documents</h1>
+    <h1>Search City of Conway Council/Commission Documents</h1>
 
     <!-- Document Type Filter -->
     <div class="filters">
@@ -242,6 +255,39 @@
         </iframe>
       </div>
     </div>
+    <footer class="about-section">
+      <h2>About this site</h2>
+      <p>
+        This site is an independent search tool for publicly available Conway, SC meeting documents.
+        I am not affiliated with, endorsed by, or representing the City of Conway.
+      </p>
+
+      <p>
+        Document links point back to files hosted by the City of Conway or its website provider.
+        Search text may include OCR-generated text and may contain errors.
+      </p>
+
+      <p>
+        Source code:
+        <a href="https://github.com/schi-427/CouncilSearch" target="_blank" rel="noopener noreferrer">
+          GitHub Repository
+        </a>
+      </p>
+
+      <p>
+        Contact:
+        <a href="mailto:your-email@example.com">your-email@example.com</a>
+      </p>
+      <p>
+        Feedback or suggestions:
+        <a href="mailto:your-email@example.com?subject=CouncilSearch%20Feedback">
+          email me
+        </a>
+      </p>
+      <p>
+        License: This project is provided as-is for public reference. See the GitHub repository for license details.
+      </p>
+    </footer>
   </div>
 
   <script>
