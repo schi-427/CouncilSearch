@@ -237,58 +237,90 @@
           <span v-if="result.date"> · {{ result.date }}</span>
           <span v-if="query.trim()"> · {{ result.hitCount }} hit<span v-if="result.hitCount !== 1">s</span></span>
         </small><br />
+
         Match found: {{ result.match }}
+
+        <br /><br />
+        <button v-if="result.hitCount > 0" type="button" @click.stop="openHitsModal(result)">
+          Preview hits
+        </button>
       </div>
+      <strong>{{ result.title }}</strong><br />
+      <small>
+        {{ result.commission }} · {{ result.documentType }}
+        <span v-if="result.date"> · {{ result.date }}</span>
+        <span v-if="query.trim()"> · {{ result.hitCount }} hit<span v-if="result.hitCount !== 1">s</span></span>
+      </small><br />
+      Match found: {{ result.match }}
     </div>
+  </div>
 
+  <div v-if="showHitsModal" class="modal-backdrop" @click.self="closeHitsModal">
+    <div class="modal-content">
+      <button class="modal-close" @click="closeHitsModal">Close</button>
 
-    <div v-if="showPdfModal" class="modal-backdrop" @click.self="closePdfModal">
-      <div class="modal-content">
-        <div style="display: flex; gap: 0.5rem; margin-bottom: 0.75rem;">
-          <button class="modal-close" @click="closePdfModal">Close</button>
+      <h2>{{ selectedHitResult.title }}</h2>
+      <p>
+        {{ selectedHitResult.hitCount }} hit<span v-if="selectedHitResult.hitCount !== 1">s</span>
+        for “{{ query }}”
+      </p>
 
-          <a v-if="selectedPdfPath" :href="selectedPdfPath" target="_blank" rel="noopener noreferrer">
-            <button type="button">Open on City's Site</button>
-          </a>
-        </div>
-        <iframe v-if="selectedPdfPath" :src="selectedPdfPath" width="100%" height="100%" style="border: none;">
-        </iframe>
+      <ol>
+        <li v-for="(hit, index) in selectedHitResult.hits" :key="index">
+          {{ hit }}
+        </li>
+      </ol>
+    </div>
+  </div>
+  <div v-if="showPdfModal" class="modal-backdrop" @click.self="closePdfModal">
+    <div class="modal-content">
+      <div style="display: flex; gap: 0.5rem; margin-bottom: 0.75rem;">
+        <button class="modal-close" @click="closePdfModal">Close</button>
+
+        <a v-if="selectedPdfPath" :href="selectedPdfPath" target="_blank" rel="noopener noreferrer">
+          <button type="button">Open on City's Site</button>
+        </a>
       </div>
+      <iframe v-if="selectedPdfPath" :src="selectedPdfPath" width="100%" height="100%" style="border: none;">
+      </iframe>
     </div>
-    <footer class="about-section">
-      <h2>About this site</h2>
-      <p>
-        This site is an independent search tool for publicly available Conway, SC meeting documents.
-        I am not affiliated with, endorsed by, or representing the City of Conway.
-      </p>
+  </div>
+  <footer class="about-section">
+    <h2>About this site</h2>
+    <p>
+      This site is an independent search tool for publicly available Conway, SC meeting documents.
+      I am not affiliated with, endorsed by, or representing the City of Conway.
+    </p>
 
-      <p>
-        Document links point back to files hosted by the City of Conway or its website provider.
-        The files can be found on the City of Conway's website at <a href="https://www.cityofconway.com/government/city-council/council-meetings" target="_blank" rel="noopener noreferrer">https://www.cityofconway.com/government/city-council/council-meetings</a>.
-        Search text may include OCR-generated text and may contain errors.
-      </p>
+    <p>
+      Document links point back to files hosted by the City of Conway or its website provider.
+      The files can be found on the City of Conway's website at <a
+        href="https://www.cityofconway.com/government/city-council/council-meetings" target="_blank"
+        rel="noopener noreferrer">https://www.cityofconway.com/government/city-council/council-meetings</a>.
+      Search text may include OCR-generated text and may contain errors.
+    </p>
 
-      <p>
-        Source code:
-        <a href="https://github.com/schi-427/CouncilSearch" target="_blank" rel="noopener noreferrer">
-          GitHub Repository
-        </a>
-      </p>
+    <p>
+      Source code:
+      <a href="https://github.com/schi-427/CouncilSearch" target="_blank" rel="noopener noreferrer">
+        GitHub Repository
+      </a>
+    </p>
 
-      <p>
-        Contact:
-        <a href="mailto:schilds427@gmail.com">schilds427@gmail.com</a>
-      </p>
-      <p>
-        Feedback or suggestions:
-        <a href="mailto:schilds427@gmail.com?subject=CouncilSearch%20Feedback">
-          email me
-        </a>
-      </p>
-      <p>
-        License: This project is provided as-is for public reference. See the GitHub repository for license details.
-      </p>
-    </footer>
+    <p>
+      Contact:
+      <a href="mailto:schilds427@gmail.com">schilds427@gmail.com</a>
+    </p>
+    <p>
+      Feedback or suggestions:
+      <a href="mailto:schilds427@gmail.com?subject=CouncilSearch%20Feedback">
+        email me
+      </a>
+    </p>
+    <p>
+      License: This project is provided as-is for public reference. See the GitHub repository for license details.
+    </p>
+  </footer>
   </div>
 
   <script>
@@ -316,6 +348,8 @@
           showPdfModal: false,
           selectedPdfPath: '',
           sortBy: 'dateDesc',
+          showHitsModal: false,
+          selectedHitResult: null,
           filters: {
             documentTypes: {
               agendas: true,
@@ -405,6 +439,7 @@
             date: doc.date,
             match: query ? this.getSnippet(doc.text || '', query) : 'All documents shown.',
             hitCount: query ? this.countOccurrences(doc.text || '', query) : 0,
+            hits: query ? this.getAllSnippets(doc.text || '', query) : [],
             textSource: doc.textSource
           }));
 
@@ -466,6 +501,40 @@
           const end = Math.min(text.length, index + query.length + 100);
 
           return text.substring(start, end) + '...';
+        },
+        openHitsModal(result) {
+          this.selectedHitResult = result;
+          this.showHitsModal = true;
+        },
+
+        closeHitsModal() {
+          this.showHitsModal = false;
+          this.selectedHitResult = null;
+        },
+
+        getAllSnippets(text, query) {
+          if (!text || !query) return [];
+
+          const snippets = [];
+          const lowerText = text.toLowerCase();
+          const lowerQuery = query.toLowerCase();
+
+          let index = lowerText.indexOf(lowerQuery);
+
+          while (index !== -1) {
+            const start = Math.max(0, index - 100);
+            const end = Math.min(text.length, index + query.length + 100);
+
+            snippets.push(
+              (start > 0 ? '...' : '') +
+              text.substring(start, end).trim() +
+              (end < text.length ? '...' : '')
+            );
+
+            index = lowerText.indexOf(lowerQuery, index + lowerQuery.length);
+          }
+
+          return snippets;
         },
       }
     }).mount('#app');
