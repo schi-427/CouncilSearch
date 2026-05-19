@@ -32,6 +32,9 @@ jobs:
       - name: Scrape Conway document links
         run: node scripts/scrape-doc-links.js
 
+      - name: Scrape YouTube video links
+        run: node scripts/scapre-video-links.js
+
       - name: Extract PDF text
         run: node scripts/extract-pdf-text.js
 

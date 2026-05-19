@@ -9,6 +9,11 @@ const { promisify } = require("util");
 
 const execFileAsync = promisify(execFile);
 
+function isYoutubeUrl(url) {
+    const lower = (url || "").toLowerCase();
+    return lower.includes("youtube.com") || lower.includes("youtu.be");
+}
+
 async function downloadPdfBuffer(url) {
     const response = await fetch(url);
 
@@ -144,11 +149,17 @@ function extractDateFromTitle(title) {
 async function main() {
     const raw = await fs.readFile(INPUT_FILE, "utf8");
     const documents = JSON.parse(raw);
+    const pdfDocuments = documents.filter((doc) => !isYoutubeUrl(doc.url));
+
+    const skippedVideos = documents.length - pdfDocuments.length;
+    if (skippedVideos > 0) {
+        console.log(`Skipping ${skippedVideos} YouTube link(s).`);
+    }
 
     const searchIndex = [];
 
-    for (const [index, doc] of documents.entries()) {
-        console.log(`Processing ${index + 1}/${documents.length}: ${doc.title}`);
+    for (const [index, doc] of pdfDocuments.entries()) {
+        console.log(`Processing ${index + 1}/${pdfDocuments.length}: ${doc.title}`);
 
         try {
             const pdfBuffer = await downloadPdfBuffer(doc.url);
@@ -191,7 +202,9 @@ async function main() {
         JSON.stringify(searchIndex, null, 2)
     );
 
-    console.log(`Saved ${searchIndex.length} records to ${OUTPUT_FILE}`);
+    console.log(
+        `Saved ${searchIndex.length} PDF records to ${OUTPUT_FILE} (${skippedVideos} video(s) omitted).`
+    );
 }
 
 main().catch((error) => {
